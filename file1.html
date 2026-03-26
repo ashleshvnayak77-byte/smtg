@@ -44,6 +44,7 @@
 <body>
 <video id="input_video"></video>
 <canvas id="output_canvas"></canvas>
+
 <div id="title">⚔ Ashlesh the legend ⚔</div>
 <div id="hud">
   <span class="hud-item hud-fire">🔥 Left Hand · Fire</span>
@@ -61,13 +62,13 @@ const video  = document.getElementById('input_video');
 const canvas = document.getElementById('output_canvas');
 const ctx    = canvas.getContext('2d');
 
-let particles      = [];
-let flashRings     = [];
+let particles  = [];
+let flashRings = [];
 let shakeX = 0, shakeY = 0;
-let fireSurge      = 0, iceSurge      = 0;
-let MAX_PARTICLES = 750;
+let fireSurge = 0, iceSurge = 0;
+const MAX_PARTICLES = 750;
 
-function addP(p) { if (particles.length < MAX_PARTICLES) particles.push(p); }
+function addP(p){ if(particles.length < MAX_PARTICLES) particles.push(p); }
 
 function spawnFire(x, y, n=1){
   for(let i=0;i<n;i++) addP({
@@ -206,21 +207,19 @@ function onResults(results){
   ctx.clearRect(0,0,W,H);
   ctx.drawImage(results.image,0,0,W,H);
 
-  // Hands
-  if(results.leftHandLandmarks){
+  if(results.leftHandLandmarks && results.poseLandmarks){
     const lWrist = sc(results.leftHandLandmarks,0,W,H);
     const lElbow = sc(results.poseLandmarks,13,W,H);
     if(isOpen(results.leftHandLandmarks)) drawKatana(lWrist, lElbow,'fire');
     if(isFist(results.leftHandLandmarks)) doExplosion(lWrist.x,lWrist.y);
   }
 
-  if(results.rightHandLandmarks){
+  if(results.rightHandLandmarks && results.poseLandmarks){
     const rWrist = sc(results.rightHandLandmarks,0,W,H);
     const rElbow = sc(results.poseLandmarks,14,W,H);
     if(isOpen(results.rightHandLandmarks)) drawKatana(rWrist, rElbow,'ice');
   }
 
-  // Clap detection
   if(results.poseLandmarks){
     const lWrist = sc(results.poseLandmarks,15,W,H);
     const rWrist = sc(results.poseLandmarks,16,W,H);
@@ -233,11 +232,22 @@ function onResults(results){
 }
 
 // Initialize Mediapipe Holistic
-const holistic = new Holistic.Holistic({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`});
-holistic.setOptions({modelComplexity:1, smoothLandmarks:true, minDetectionConfidence:0.6, minTrackingConfidence:0.5});
+const holistic = new Holistic.Holistic({
+  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+});
+holistic.setOptions({
+  modelComplexity:1,
+  smoothLandmarks:true,
+  minDetectionConfidence:0.6,
+  minTrackingConfidence:0.5
+});
 holistic.onResults(onResults);
 
-const camera = new Camera(video, { onFrame: async()=>{ await holistic.send({image: video}); }, width:1280, height:720 });
+// Start camera
+const camera = new Camera(video, {
+  onFrame: async()=>await holistic.send({image: video}),
+  width:1280, height:720
+});
 camera.start();
 </script>
 </body>
